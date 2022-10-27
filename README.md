@@ -4,6 +4,7 @@ LAMP環境を1から構築しようと思ったが、phpインストール後下
 PHP Warning: PHP Startup: ^(text/|application/xhtml\+xml) (offset=0): unrecognised compile-time option bit(s) in Unknown on line 0
 
 下記ページなど参考にするが解決できず
+
 https://github.com/oerdnj/deb.sury.org/issues/1682
 
 ## 一般ユーザーを作成する
@@ -20,23 +21,32 @@ subo apt install certbot
 - ポート開放する:
 
 sudo ufw allow 22
+
 sudo ufw allow 80
+
 sudo ufw allow 443
+
 sudo ufw allow 5000
 
 sudo ufw reload
+
 sudo ufw status
 
 - confファイルを下記に書き換え
 cd /etc/apache2/sites-available/
+
 vi 000-default.conf 
+
 vi default-ssl.conf
 
 ServerName 取得したドメイン名
+
 DocumentRoot /var/www/html※希望のドキュメントルート
+
 ServerAdmin 管理したいメールアドレス
 
 a2ensite 000-default //有効化する
+
 service apache2 restart //再起動する
 
 - SSL証明書取得:
@@ -45,8 +55,11 @@ certbot certonly --webroot -w ドキュメントルート -d ドメイン名
 メールアドレス登録後、規約に同意してそのほかの質問に答える。
 
 - SSL証明書取得時の作成ファイル
+
 /etc/letsencrypt/live/ドメイン名/cert.pem
+
 /etc/letsencrypt/live/ドメイン名/privkey.pem
+
 /etc/letsencrypt/live/ドメイン名/chain.pem
 
 - SSLに関するモジュールを有効化する:
@@ -56,12 +69,19 @@ a2enmod ssl
 vi default-ssl.conf
 
 ルートディレクトリとして公開するディレクトリのパスへ修正:
+
 DocumentRoot = /var/www/html/アプリのディレクトリ名/public
+
 取得したサーバ証明書と公開鍵のパスに変更:
+
 SSLCertificateFile      /etc/letsencrypt/live/ドメイン名/cert.pem
+
 取得した秘密鍵のパスに変更:
+
 SSLCertificateKeyFile   /etc/letsencrypt/live/ドメイン名/privkey.pem
+
 コメント解除して取得した中間証明書のパスに変更:
+
 SSLCertificateChainFile /etc/letsencrypt/live/ドメイン名/chain.pem
 
 Esc→:wqで保存して終了
@@ -75,20 +95,30 @@ systemctl restart apache2
 - この時、通常のHTTP接続に対してHTTPSへのリダイレクトをかけることで常にSSL/TLS通信を行うことも可能となる。以下、設定ファイルに追記。
 
 vi /etc/apache2/sites-available/000-default.conf
+
 ↑設定ファイルを編集。通常のHTTP用サイト設定に追記します。(HTTPでアクセスした際にhttpsに変換する)
+
 <VirtualHost *:80>
+
 　　～
+
 　　～
+
 RewriteEngine On
+
 RewriteCond %{HTTPS} off
+
 RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
 ↑3行をVirtualhost内最下部にでも追記
+
 </VirtualHost>
 
 - 証明書をcronで自動更新
 vi /etc/crontab
 
 末行に以下を追記:
+
 0 0 * * * root /usr/bin/cerbot renew
 
 ## ローカルで作成したLaravelアプリをサーバーへデプロイ
@@ -97,10 +127,12 @@ npm run prodを実行後にgitへpushする。
 
 - git clone SSHかHTTPSでクローン
 httpsの場合はアクセストークン作成の必要あり。
+
 求められるパスワードはアクセストークンを入力(一般用でよさそうclassic)
 
 - envファイルを作成:
 下記コマンドでenvファイルをコピーして作成。
+
 cp .env.example .env
 
 - envファイルに本番環境用の設定を入力
@@ -118,7 +150,9 @@ a2enmod rewrite
 
 - seedコマンドでデータベースにデータをmigrate
 本番環境に必要な情報にseederを書き換える
+
 php artisan migrate:refresh --seed
+
 を実行
 
 ## エラー対応
